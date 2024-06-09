@@ -1,0 +1,161 @@
+<div class="container-fluid">
+  <form class="row p-3 center" [formGroup]="monthForm" (ngSubmit)="onSubmit()">
+    <div class="mr-2 col-md-3">
+      <label for="startMonth">Start Month:</label>
+      <select id="startMonth" formControlName="startMonth">
+        <option *ngFor="let month of months" [value]="month">{{ month }}</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="endMonth">End Month:</label>
+      <select id="endMonth" formControlName="endMonth">
+        <option *ngFor="let month of months" [value]="month">{{ month }}</option>
+      </select>
+    </div>
+    <button class="col-md-1" type="submit">Submit</button>
+
+    <table class="table-fixed">
+      <thead>
+        <tr>
+          <th>Start Period V End Period V</th>
+          <ng-container *ngFor="let month of selectedMonths">
+            <th>{{month + ' ' + date.getFullYear()}}</th>
+          </ng-container>
+        </tr>
+        <tr>
+          <th [attr.colspan]="selectedMonths.length + 1">Income</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container formArrayName="incomeCategory">
+          <ng-container *ngFor="let control of incomeCategory.controls; index as i" [formGroupName]="i">
+            <tr>
+              <td><input placeholder="Add new ‘Income’ category " type="text" formControlName="category" #categoryInput>
+              </td>
+              <ng-container *ngFor="let item of selectedMonths">
+                <td>
+                  <input type="number" (keydown)="handleTab($event, i, item.toLowerCase())" (contextmenu)="showContextMenuIncome($event, control.get(item.toLowerCase()))"
+                    [formControlName]="item.toLowerCase()">
+                </td>
+              </ng-container>
+            </tr>
+            <ng-container *ngIf="contextIncomeMenuVisible">
+              <div class="context-menu" [style.top.px]="contextMenuPosition.y" [style.left.px]="contextMenuPosition.x">
+                <ul>
+                  <li (click)="applyToAllIncome(i)">Apply to all</li>
+                </ul>
+              </div>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+        <tr>
+          <th [attr.colspan]="selectedMonths.length + 1"></th>
+        </tr>
+        <tr>
+          <td><b>Income Total</b></td>
+          <ng-container *ngFor="let item of selectedMonths">
+            <td>
+              {{getTotalIncome(item.toLowerCase())}}
+            </td>
+          </ng-container>
+        </tr>
+        <tr>
+          <th [attr.colspan]="selectedMonths.length + 1"></th>
+        </tr>
+        <tr>
+          <th [attr.colspan]="selectedMonths.length + 1">Expenses</th>
+        </tr>
+        <ng-container formArrayName="operationalExpensesCategory">
+          <ng-container *ngFor="let control of operationalExpensesCategory.controls; index as i" [formGroupName]="i">
+            <tr>
+              <td><input placeholder="Add new ‘Operational Expenses’ category" type="text" formControlName="category" #categoryInputOperationalExpense>
+              </td>
+              <ng-container *ngFor="let item of selectedMonths">
+                <td>
+                  <input type="number" (keydown)="handleTabOperationalExpense($event, i, item.toLowerCase())"
+                    [formControlName]="item.toLowerCase()" (contextmenu)="showContextOperationalExpense($event, control.get(item.toLowerCase()))">
+                </td>
+              </ng-container>
+            </tr>
+            <ng-container *ngIf="contextOperationalExpensesMenuVisible">
+              <div class="context-menu" [style.top.px]="contextMenuPosition.y" [style.left.px]="contextMenuPosition.x">
+                <ul>
+                  <li (click)="applyToAllOperationalExpense(i)">Apply to all</li>
+                </ul>
+              </div>
+            </ng-container>
+          </ng-container>
+          <tr>
+            <td><b>Sub Total</b></td>
+            <ng-container *ngFor="let item of selectedMonths">
+              <td>
+                {{getSubtotalExpense(item.toLowerCase())}}
+              </td>
+            </ng-container>
+          </tr>
+          
+        </ng-container>
+        <ng-container formArrayName="expenseCategory">
+          <ng-container *ngFor="let control of expenseCategory.controls; index as i" [formGroupName]="i">
+            <tr>
+              <td><input placeholder="Add new ‘Expenses’ category" type="text" formControlName="category" #categoryInputExpense>
+              </td>
+              <ng-container *ngFor="let item of selectedMonths">
+                <td>
+                  <input type="number" (keydown)="handleTabExpense($event, i, item.toLowerCase())"
+                    [formControlName]="item.toLowerCase()"  (contextmenu)="showContextExpense($event, control.get(item.toLowerCase()))">
+                </td>
+              </ng-container>
+              <ng-container *ngIf="contextExpensesMenuVisible">
+                <div class="context-menu" [style.top.px]="contextMenuPosition.y" [style.left.px]="contextMenuPosition.x">
+                  <ul>
+                    <li (click)="applyToAllExpense(i)">Apply to all</li>
+                  </ul>
+                </div>
+              </ng-container>
+            </tr>
+            <ng-container *ngFor="let item of selectedMonths">
+                <div class="d-none">{{getExpenseTotal(item.toLowerCase())}}</div>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+        <tr>
+          <td><b>Total Expenses</b></td>
+          <ng-container *ngFor="let item of selectedMonths">
+            <td>
+              {{getFinalTotalExpense(item.toLowerCase())}}
+            </td>
+          </ng-container>
+        </tr>
+        <tr>
+          <td><b>Profit / Loss</b></td>
+          <ng-container *ngFor="let item of selectedMonths">
+            <td>
+              {{getProfitLoss(item.toLowerCase())}}
+            </td>
+          </ng-container>
+        </tr>
+        <tr>
+          <td><b>Opening Balance</b></td>
+          <ng-container *ngFor="let it of getOpeningBalance()">
+            <td>
+              {{it.value || 0}}
+            </td>
+          </ng-container>
+        </tr>
+        <tr>
+          <td><b>Closing Balance</b></td>
+          <ng-container *ngFor="let it of selectedMonths">
+            <ng-container *ngFor="let element of getOpeningBalance()">
+              <ng-container *ngIf="it.toLowerCase() === element.month.toLowerCase()">
+                <td>{{getProfitLoss(it.toLowerCase()) + element.value}}</td>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+
+</div>
